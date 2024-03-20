@@ -1,4 +1,4 @@
-import enum
+from enum import IntEnum
 from collections import namedtuple
 
 
@@ -23,7 +23,7 @@ class Asset:
         self.game = game
         self.amount = amount
 
-    def to_dict(self):
+    def to_dict(self) -> dict:
         return {
             "appid": int(self.game.app_id),
             "contextid": self.game.context_id,
@@ -32,7 +32,7 @@ class Asset:
         }
 
 
-class Currency(enum.IntEnum):
+class Currency(IntEnum):
     USD = 1
     GBP = 2
     EURO = 3
@@ -82,7 +82,7 @@ class Currency(enum.IntEnum):
     RON = 47
 
 
-class TradeOfferState(enum.IntEnum):
+class TradeOfferState(IntEnum):
     Invalid = 1
     Active = 2
     Accepted = 3
@@ -96,14 +96,15 @@ class TradeOfferState(enum.IntEnum):
     StateInEscrow = 11
 
 
-class SteamUrl:
+class SteamURL:
     API_URL = "https://api.steampowered.com"
     COMMUNITY_URL = "https://steamcommunity.com"
     STORE_URL = "https://store.steampowered.com"
+    LOGIN_URL = "https://login.steampowered.com"
 
 
 class Endpoints:
-    CHAT_LOGIN = SteamUrl.API_URL + "/ISteamWebUserPresenceOAuth/Logon/v1"
-    SEND_MESSAGE = SteamUrl.API_URL + "/ISteamWebUserPresenceOAuth/Message/v1"
-    CHAT_LOGOUT = SteamUrl.API_URL + "/ISteamWebUserPresenceOAuth/Logoff/v1"
-    CHAT_POLL = SteamUrl.API_URL + "/ISteamWebUserPresenceOAuth/Poll/v1"
+    CHAT_LOGIN = f"{SteamURL.API_URL}/ISteamWebUserPresenceOAuth/Logon/v1"
+    SEND_MESSAGE = f"{SteamURL.API_URL}/ISteamWebUserPresenceOAuth/Message/v1"
+    CHAT_LOGOUT = f"{SteamURL.API_URL}/ISteamWebUserPresenceOAuth/Logoff/v1"
+    CHAT_POLL = f"{SteamURL.API_URL}/ISteamWebUserPresenceOAuth/Poll/v1"

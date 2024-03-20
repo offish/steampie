@@ -2,7 +2,8 @@
 # To use is you have to obtain 'shared_secret' and 'identity_secret'
 # From your Steamguard file
 
-from steampy.guard import generate_confirmation_key, generate_one_time_code
+from steampie.guard import generate_confirmation_key, generate_one_time_code
+
 
 shared_secret = ""
 identity_secret = ""

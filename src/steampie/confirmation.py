@@ -2,18 +2,18 @@ import enum
 import json
 import time
 from typing import List
+from http import HTTPStatus
 
 import requests
 from bs4 import BeautifulSoup
 
-from steampy import guard
-from steampy.exceptions import ConfirmationExpected
-from steampy.login import InvalidCredentials
+import guard
+from .exceptions import ConfirmationExpected
+from .login import InvalidCredentials
 
 
 class Confirmation:
-    def __init__(self, _id, data_confid, nonce):
-        self.id = _id.split("conf")[1]
+    def __init__(self, data_confid, nonce):
         self.data_confid = data_confid
         self.nonce = nonce
 
@@ -42,11 +42,6 @@ class ConfirmationExecutor:
         )
         return self._send_confirmation(confirmation)
 
-    def confirm_sell_listing(self, asset_id: str) -> dict:
-        confirmations = self._get_confirmations()
-        confirmation = self._select_sell_listing_confirmation(confirmations, asset_id)
-        return self._send_confirmation(confirmation)
-
     def _send_confirmation(self, confirmation: Confirmation) -> dict:
         tag = Tag.ALLOW
         params = self._create_confirmation_params(tag.value)
@@ -55,13 +50,13 @@ class ConfirmationExecutor:
         params["ck"] = confirmation.nonce
         headers = {"X-Requested-With": "XMLHttpRequest"}
         return self._session.get(
-            self.CONF_URL + "/ajaxop", params=params, headers=headers
+            f"{self.CONF_URL}/ajaxop", params=params, headers=headers
         ).json()
 
     def _get_confirmations(self) -> List[Confirmation]:
         confirmations = []
         confirmations_page = self._fetch_confirmations_page()
-        if confirmations_page.status_code == 200:
+        if confirmations_page.status_code == HTTPStatus.OK:
             confirmations_json = json.loads(confirmations_page.text)
             for conf in confirmations_json["conf"]:
                 data_confid = conf["id"]
@@ -69,14 +64,14 @@ class ConfirmationExecutor:
                 confirmations.append(Confirmation(data_confid, nonce))
             return confirmations
         else:
-            return ConfirmationExpected
+            raise ConfirmationExpected
 
     def _fetch_confirmations_page(self) -> requests.Response:
         tag = Tag.CONF.value
         params = self._create_confirmation_params(tag)
         headers = {"X-Requested-With": "com.valvesoftware.android.steam.community"}
         response = self._session.get(
-            self.CONF_URL + "/getlist", params=params, headers=headers
+            f"{self.CONF_URL}/getlist", params=params, headers=headers
         )
         if (
             "Steam Guard Mobile Authenticator is providing incorrect Steam Guard codes."
@@ -86,10 +81,10 @@ class ConfirmationExecutor:
         return response
 
     def _fetch_confirmation_details_page(self, confirmation: Confirmation) -> str:
-        tag = "details" + confirmation.data_confid
+        tag = f"details{confirmation.data_confid}"
         params = self._create_confirmation_params(tag)
         response = self._session.get(
-            self.CONF_URL + "/details/" + confirmation.data_confid, params=params
+            f"{self.CONF_URL}/details/{confirmation.data_confid}", params=params
         )
         return response.json()["html"]
 
@@ -121,28 +116,6 @@ class ConfirmationExecutor:
             if confirmation_id == trade_offer_id:
                 return confirmation
         raise ConfirmationExpected
-
-    def _select_sell_listing_confirmation(
-        self, confirmations: List[Confirmation], asset_id: str
-    ) -> Confirmation:
-        for confirmation in confirmations:
-            confirmation_details_page = self._fetch_confirmation_details_page(
-                confirmation
-            )
-            confirmation_id = self._get_confirmation_sell_listing_id(
-                confirmation_details_page
-            )
-            if confirmation_id == asset_id:
-                return confirmation
-        raise ConfirmationExpected
-
-    @staticmethod
-    def _get_confirmation_sell_listing_id(confirmation_details_page: str) -> str:
-        soup = BeautifulSoup(confirmation_details_page, "html.parser")
-        scr_raw = soup.select("script")[2].string.strip()
-        scr_raw = scr_raw[scr_raw.index("'confiteminfo', ") + 16 :]
-        scr_raw = scr_raw[: scr_raw.index(", UserYou")].replace("\n", "")
-        return json.loads(scr_raw)["id"]
 
     @staticmethod
     def _get_confirmation_trade_offer_id(confirmation_details_page: str) -> str:
