@@ -3,11 +3,11 @@ import json
 import time
 from http import HTTPStatus
 
-import guard
 from bs4 import BeautifulSoup
 from requests import Response, Session
 
 from .exceptions import ConfirmationExpected, InvalidCredentials
+from .guard import generate_confirmation_key, generate_device_id
 
 
 class Confirmation:
@@ -99,10 +99,10 @@ class ConfirmationExecutor:
 
     def _create_confirmation_params(self, tag_string: str) -> dict:
         timestamp = int(time.time())
-        confirmation_key = guard.generate_confirmation_key(
+        confirmation_key = generate_confirmation_key(
             self._identity_secret, tag_string, timestamp
         )
-        android_id = guard.generate_device_id(self._my_steam_id)
+        android_id = generate_device_id(self._my_steam_id)
 
         return {
             "p": android_id,

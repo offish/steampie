@@ -3,7 +3,6 @@ import re
 import time
 import urllib.parse as urlparse
 
-import guard
 import requests
 
 from .confirmation import ConfirmationExecutor
@@ -14,6 +13,7 @@ from .exceptions import (
     SteampieException,
     TooManyRequests,
 )
+from .guard import load_steam_guard
 from .login import LoginExecutor
 from .models import Asset, GameOptions, SteamUrl, TradeOfferState
 from .utils import (
@@ -48,8 +48,9 @@ class SteamClient:
             self.set_proxies(proxies)
 
         self.steam_guard_string = steam_guard
+
         if self.steam_guard_string is not None:
-            self.steam_guard = guard.load_steam_guard(self.steam_guard_string)
+            self.steam_guard = load_steam_guard(self.steam_guard_string)
         else:
             self.steam_guard = None
 
@@ -111,7 +112,7 @@ class SteamClient:
 
         if invalid_client_credentials_is_present:
             self.steam_guard_string = steam_guard
-            self.steam_guard = guard.load_steam_guard(self.steam_guard_string)
+            self.steam_guard = load_steam_guard(self.steam_guard_string)
             self.username = username
             self._password = password
 
@@ -212,6 +213,7 @@ class SteamClient:
 
         full_response = self._session.get(url, params=params)
         response_dict = full_response.json()
+
         if full_response.status_code == 429:
             raise TooManyRequests("Too many requests, try again later.")
 

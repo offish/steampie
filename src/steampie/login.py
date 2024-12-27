@@ -1,7 +1,6 @@
 from base64 import b64encode
 from http import HTTPStatus
 
-import guard
 from requests import Response, Session
 from rsa import PublicKey, encrypt
 
@@ -11,6 +10,7 @@ from .exceptions import (
     InvalidCredentials,
     SteampieException,
 )
+from .guard import generate_one_time_code
 from .models import SteamUrl
 from .utils import create_cookie
 
@@ -155,7 +155,7 @@ class LoginExecutor:
 
     def _enter_steam_guard_if_necessary(self, login_response: Response) -> Response:
         if login_response.json()["requires_twofactor"]:
-            self.one_time_code = guard.generate_one_time_code(self.shared_secret)
+            self.one_time_code = generate_one_time_code(self.shared_secret)
             return self._send_login_request()
         return login_response
 
@@ -186,7 +186,7 @@ class LoginExecutor:
         steamid = response["steamid"]
         request_id = response["request_id"]
         code_type = 3
-        code = guard.generate_one_time_code(self.shared_secret)
+        code = generate_one_time_code(self.shared_secret)
 
         update_data = {
             "client_id": client_id,

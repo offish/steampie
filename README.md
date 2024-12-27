@@ -1,17 +1,17 @@
 # steampie
-[![License](https://img.shields.io/github/license/offish/tf2-express.svg)](https://github.com/offish/tf2-express/blob/master/LICENSE)
-[![Stars](https://img.shields.io/github/stars/offish/tf2-express.svg)](https://github.com/offish/tf2-express/stargazers)
-[![Issues](https://img.shields.io/github/issues/offish/tf2-express.svg)](https://github.com/offish/tf2-express/issues)
-[![Size](https://img.shields.io/github/repo-size/offish/tf2-express.svg)](https://github.com/offish/tf2-express)
+[![License](https://img.shields.io/github/license/offish/steampie.svg)](https://github.com/offish/steampie/blob/master/LICENSE)
+[![Stars](https://img.shields.io/github/stars/offish/steampie.svg)](https://github.com/offish/steampie/stargazers)
+[![Issues](https://img.shields.io/github/issues/offish/steampie.svg)](https://github.com/offish/steampie/issues)
+[![Size](https://img.shields.io/github/repo-size/offish/steampie.svg)](https://github.com/offish/steampie)
 [![Discord](https://img.shields.io/discord/467040686982692865?color=7289da&label=Discord&logo=discord)](https://discord.gg/t8nHSvA)
 [![Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff)
 
 `steampie` is a Python library for interacting with Steam, and is a modified fork of [bukson](https://github.com/bukson)'s [steampy](https://github.com/bukson/steampy).
 
 ## Donate
-* BTC: bc1qntlxs7v76j0zpgkwm62f6z0spsvyezhcmsp0z2 (offish)
+* BTC: `bc1qntlxs7v76j0zpgkwm62f6z0spsvyezhcmsp0z2` (offish)
 * [Steam Trade Offer](https://steamcommunity.com/tradeoffer/new/?partner=293059984&token=0-l_idZR) (offish)
-* BTC (bukson): 3PRzESHsTVkCFK7osjwFGQLZjSf7qXP1Ta (bukson)
+* BTC (bukson): `3PRzESHsTVkCFK7osjwFGQLZjSf7qXP1Ta` (bukson)
 * [PayPal](https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=XC8BMJ8QRD9ZY) (bukson)
 
 ## Installation
