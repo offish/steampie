@@ -51,7 +51,7 @@ make html
 MIT License
 
 Copyright (c) 2016 [Michał Bukowski](mailto:gigibukson@gmail.com)<br>
-Copyright (c) 2024 offish [(confern)](https://steamcommunity.com/id/confern)
+Copyright (c) 2024 offish ([confern](https://steamcommunity.com/id/confern))
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal

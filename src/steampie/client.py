@@ -89,29 +89,9 @@ class SteamClient:
         raise ValueError(f"Invalid steam_id: {steam_id}")
 
     def login(self) -> None:
-        # invalid_client_credentials_is_present = None in {
-        #     self.username,
-        #     self._password,
-        #     self.steam_guard_string,
-        # }
-        # invalid_login_credentials_is_present = None in {username, password, steam_guard}
-
-        # if (
-        #     invalid_client_credentials_is_present
-        #     and invalid_login_credentials_is_present
-        # ):
-        #     raise InvalidCredentials(
-        #         'You have to pass username, password and steam_guard parameters when using "login" method',
-        #     )
-
-        # if invalid_client_credentials_is_present:
-        #     self.steam_guard_string = steam_guard
-        #     self.steam_guard = load_steam_guard(self.steam_guard_string)
-        #     self.username = username
-        #     self._password = password
-
+        # session is alive, no need to login again
         if self.was_login_executed and self.is_session_alive():
-            return  # Session is alive, no need to login again
+            return
 
         self._session.cookies.set("steamRememberLogin", "true")
         LoginExecutor(
@@ -136,9 +116,11 @@ class SteamClient:
         cookie_value = steam_login_secure_cookies[0].value
         decoded_cookie_value = urlparse.unquote(cookie_value)
         access_token_parts = decoded_cookie_value.split("||")
+
         if len(access_token_parts) < 2:
             print(decoded_cookie_value)
             raise ValueError("Access token not found in steamLoginSecure cookie")
+
         access_token = access_token_parts[1]
         return access_token
 
@@ -459,8 +441,8 @@ class SteamClient:
             "Referer": f"{SteamUrl.COMMUNITY_URL}/tradeoffer/new/?partner={partner_account_id}",
             "Origin": SteamUrl.COMMUNITY_URL,
         }
-
         response = self._session.post(url, data=params, headers=headers).json()
+
         if response.get("needs_mobile_confirmation"):
             response.update(self._confirm_transaction(response["tradeofferid"]))
 

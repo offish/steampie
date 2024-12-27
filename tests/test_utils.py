@@ -19,15 +19,13 @@ def test_texts_between() -> None:
 
 
 def test_account_id_to_steam_id() -> None:
-    account_id = "293059984"
-    steam_id = account_id_to_steam_id(account_id)
-    assert steam_id == "76561198253325712"
+    assert account_id_to_steam_id("293059984") == "76561198253325712"
+    assert account_id_to_steam_id("488991480") == "76561198449257208"
 
 
 def test_steam_id_to_account_id() -> None:
-    steam_id = "76561198253325712"
-    account_id = steam_id_to_account_id(steam_id)
-    assert account_id == "293059984"
+    assert steam_id_to_account_id("76561198253325712") == "293059984"
+    assert steam_id_to_account_id("76561198449257208") == "488991480"
 
 
 def test_get_key_value_from_url() -> None:

@@ -3,7 +3,6 @@ import pytest
 from steampie.client import SteamClient
 from steampie.exceptions import LoginRequired
 from steampie.models import Asset, GameOptions
-from steampie.utils import steam_id_to_account_id
 
 
 def test_steam_login(client: SteamClient) -> None:
@@ -70,16 +69,16 @@ def test_get_trade_offers(client: SteamClient) -> None:
 
 def test_make_offer(client: SteamClient) -> None:
     partner_steam_id = "76561198449257208"
-    partner_id = steam_id_to_account_id(partner_steam_id)
     game = GameOptions.TF2
-
     my_items = client.get_my_inventory(GameOptions.TF2)
-    partner_items = client.get_partner_inventory(partner_id, game)
+    partner_items = client.get_partner_inventory(partner_steam_id, game)
     my_first_item = next(iter(my_items.values()))
     partner_first_item = next(iter(partner_items.values()))
     my_asset = Asset(my_first_item["id"], game)
     partner_asset = Asset(partner_first_item["id"], game)
-    response = client.make_offer([my_asset], [partner_asset], partner_id, "test offer")
+    response = client.make_offer(
+        [my_asset], [partner_asset], partner_steam_id, "test offer"
+    )
 
     assert response is not None
     assert "tradeofferid" in response

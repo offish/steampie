@@ -12,7 +12,6 @@ class GameOptions:
     DOTA2 = PredefinedOptions("570", "2")
     CS = PredefinedOptions("730", "2")
     TF2 = PredefinedOptions("440", "2")
-    PUBG = PredefinedOptions("578080", "2")
     RUST = PredefinedOptions("252490", "2")
 
     def __init__(self, app_id: str, context_id: str) -> None:
@@ -38,7 +37,7 @@ class Asset:
 class Currency(IntEnum):
     USD = 1
     GBP = 2
-    EURO = 3
+    EUR = 3
     CHF = 4
     RUB = 5
     PLN = 6
@@ -52,7 +51,7 @@ class Currency(IntEnum):
     THB = 14
     VND = 15
     KRW = 16
-    TRY = 17
+    # TRY = 17
     UAH = 18
     MXN = 19
     CAD = 20
@@ -68,21 +67,21 @@ class Currency(IntEnum):
     TWD = 30
     SAR = 31
     AED = 32
-    SEK = 33
-    ARS = 34
+    # SEK = 33
+    # ARS = 34
     ILS = 35
-    BYN = 36
+    # BYN = 36
     KZT = 37
     KWD = 38
     QAR = 39
     CRC = 40
     UYU = 41
-    BGN = 42
-    HRK = 43
-    CZK = 44
-    DKK = 45
-    HUF = 46
-    RON = 47
+    # BGN = 42
+    # HRK = 43
+    # CZK = 44
+    # DKK = 45
+    # HUF = 46
+    # RON = 47
 
 
 class TradeOfferState(IntEnum):
