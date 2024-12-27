@@ -1,3 +1,16 @@
+__all__ = [
+    "SteampieException",
+    "SevenDaysHoldException",
+    "TooManyRequests",
+    "ApiException",
+    "LoginRequired",
+    "InvalidCredentials",
+    "CaptchaRequired",
+    "ConfirmationExpected",
+    "ProxyConnectionError",
+]
+
+
 class SteampieException(Exception):
     pass
 

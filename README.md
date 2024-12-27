@@ -1,18 +1,18 @@
 # steampie
+[![License](https://img.shields.io/github/license/offish/tf2-express.svg)](https://github.com/offish/tf2-express/blob/master/LICENSE)
+[![Stars](https://img.shields.io/github/stars/offish/tf2-express.svg)](https://github.com/offish/tf2-express/stargazers)
+[![Issues](https://img.shields.io/github/issues/offish/tf2-express.svg)](https://github.com/offish/tf2-express/issues)
+[![Size](https://img.shields.io/github/repo-size/offish/tf2-express.svg)](https://github.com/offish/tf2-express)
+[![Discord](https://img.shields.io/discord/467040686982692865?color=7289da&label=Discord&logo=discord)](https://discord.gg/t8nHSvA)
+[![Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff)
 
 `steampie` is a Python library for interacting with Steam, and is a modified fork of [bukson](https://github.com/bukson)'s [steampy](https://github.com/bukson/steampy).
 
-`steampie` has no market or async functionality. 
-
-
 ## Donate
-* BTC: bc1qntlxs7v76j0zpgkwm62f6z0spsvyezhcmsp0z2
-* [Steam Trade Offer](https://steamcommunity.com/tradeoffer/new/?partner=293059984&token=0-l_idZR)
-<br>
-<br>
-* BTC (bukson): 3PRzESHsTVkCFK7osjwFGQLZjSf7qXP1Ta 
+* BTC: bc1qntlxs7v76j0zpgkwm62f6z0spsvyezhcmsp0z2 (offish)
+* [Steam Trade Offer](https://steamcommunity.com/tradeoffer/new/?partner=293059984&token=0-l_idZR) (offish)
+* BTC (bukson): 3PRzESHsTVkCFK7osjwFGQLZjSf7qXP1Ta (bukson)
 * [PayPal](https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=XC8BMJ8QRD9ZY) (bukson)
-
 
 ## Installation
 ```bash
@@ -31,19 +31,15 @@ pip install --upgrade steampie
 
 
 ## Developing
-If you want to contribute make sure you have `black` and `flake8` installed. 
-Document the contributed code and make unittests (if applicable).
 
 
 ### Tests
 ```bash
 # steampie/
-python -m unittest
+pytest
 ```
 
 ### Building documentation
-Make sure you have `sphinx` and the 
-
 ```bash
 # steampie/
 cd docs/
@@ -51,12 +47,11 @@ make clean
 make html
 ```
 
-
 ## License
 MIT License
 
 Copyright (c) 2016 [Michał Bukowski](mailto:gigibukson@gmail.com)<br>
-Copyright (c) 2024 offish ([confern](https://steamcommunity.com/id/confern))
+Copyright (c) 2024 offish [(confern)](https://steamcommunity.com/id/confern)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal

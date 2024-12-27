@@ -1,10 +1,13 @@
 from enum import IntEnum
-from collections import namedtuple
+from typing import NamedTuple
+
+
+class PredefinedOptions(NamedTuple):
+    app_id: str
+    context_id: str
 
 
 class GameOptions:
-    PredefinedOptions = namedtuple("PredefinedOptions", ["app_id", "context_id"])
-
     STEAM = PredefinedOptions("753", "6")
     DOTA2 = PredefinedOptions("570", "2")
     CS = PredefinedOptions("730", "2")
@@ -96,7 +99,7 @@ class TradeOfferState(IntEnum):
     StateInEscrow = 11
 
 
-class SteamURL:
+class SteamUrl:
     API_URL = "https://api.steampowered.com"
     COMMUNITY_URL = "https://steamcommunity.com"
     STORE_URL = "https://store.steampowered.com"
@@ -104,7 +107,7 @@ class SteamURL:
 
 
 class Endpoints:
-    CHAT_LOGIN = f"{SteamURL.API_URL}/ISteamWebUserPresenceOAuth/Logon/v1"
-    SEND_MESSAGE = f"{SteamURL.API_URL}/ISteamWebUserPresenceOAuth/Message/v1"
-    CHAT_LOGOUT = f"{SteamURL.API_URL}/ISteamWebUserPresenceOAuth/Logoff/v1"
-    CHAT_POLL = f"{SteamURL.API_URL}/ISteamWebUserPresenceOAuth/Poll/v1"
+    CHAT_LOGIN = f"{SteamUrl.API_URL}/ISteamWebUserPresenceOAuth/Logon/v1"
+    SEND_MESSAGE = f"{SteamUrl.API_URL}/ISteamWebUserPresenceOAuth/Message/v1"
+    CHAT_LOGOUT = f"{SteamUrl.API_URL}/ISteamWebUserPresenceOAuth/Logoff/v1"
+    CHAT_POLL = f"{SteamUrl.API_URL}/ISteamWebUserPresenceOAuth/Poll/v1"

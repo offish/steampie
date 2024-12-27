@@ -1,26 +1,33 @@
-import re
 import json
+import re
+import time
 import urllib.parse as urlparse
 
+import guard
 import requests
 
-import guard
 from .confirmation import ConfirmationExecutor
-from .exceptions import SevenDaysHoldException, ApiException, TooManyRequests
-from .login import LoginExecutor, InvalidCredentials
-from .models import Asset, TradeOfferState, SteamURL, GameOptions
+from .exceptions import (
+    ApiException,
+    InvalidCredentials,
+    SevenDaysHoldException,
+    SteampieException,
+    TooManyRequests,
+)
+from .login import LoginExecutor
+from .models import Asset, GameOptions, SteamUrl, TradeOfferState
 from .utils import (
+    account_id_to_steam_id,
+    get_description_key,
+    get_key_value_from_url,
+    login_required,
+    merge_items_with_descriptions_from_inventory,
+    merge_items_with_descriptions_from_offer,
+    merge_items_with_descriptions_from_offers,
+    ping_proxy,
+    steam_id_to_account_id,
     text_between,
     texts_between,
-    merge_items_with_descriptions_from_inventory,
-    steam_id_to_account_id,
-    merge_items_with_descriptions_from_offers,
-    get_description_key,
-    merge_items_with_descriptions_from_offer,
-    account_id_to_steam_id,
-    get_key_value_from_url,
-    ping_proxy,
-    login_required,
 )
 
 
@@ -28,11 +35,11 @@ class SteamClient:
     def __init__(
         self,
         api_key: str,
-        username: str = None,
-        password: str = None,
-        steam_guard: str = None,
-        login_cookies: dict = None,
-        proxies: dict = None,
+        username: str | None = None,
+        password: str | None = None,
+        steam_guard: str | None = None,
+        login_cookies: dict | None = None,
+        proxies: dict | None = None,
     ) -> None:
         self._api_key = api_key
         self._session = requests.Session()
@@ -49,6 +56,7 @@ class SteamClient:
         self.was_login_executed = False
         self.username = username
         self._password = password
+        self._access_token = None
 
         if login_cookies:
             self.set_login_cookies(login_cookies)
@@ -57,7 +65,7 @@ class SteamClient:
         if not isinstance(proxies, dict):
             raise TypeError(
                 "Proxy must be a dict. Example: "
-                '\{"http": "http://login:password@host:port"\, "https": "http://login:password@host:port"\}'
+                r'\{"http": "http://login:password@host:port"\, "https": "http://login:password@host:port"\}',
             )
 
         if ping_proxy(proxies):
@@ -74,29 +82,31 @@ class SteamClient:
 
     @login_required
     def get_steam_id(self) -> int:
-        url = SteamURL.COMMUNITY_URL
+        url = SteamUrl.COMMUNITY_URL
         response = self._session.get(url)
         if steam_id := re.search(r'g_steamID = "(\d+)";', response.text):
             return int(steam_id.group(1))
-        else:
-            raise ValueError(f"Invalid steam_id: {steam_id}")
+        raise ValueError(f"Invalid steam_id: {steam_id}")
 
     def login(
-        self, username: str = None, password: str = None, steam_guard: str = None
+        self,
+        username: str | None = None,
+        password: str | None = None,
+        steam_guard: str | None = None,
     ) -> None:
-        invalid_client_credentials_is_present = None in (
+        invalid_client_credentials_is_present = None in {
             self.username,
             self._password,
             self.steam_guard_string,
-        )
-        invalid_login_credentials_is_present = None in (username, password, steam_guard)
+        }
+        invalid_login_credentials_is_present = None in {username, password, steam_guard}
 
         if (
             invalid_client_credentials_is_present
             and invalid_login_credentials_is_present
         ):
             raise InvalidCredentials(
-                'You have to pass username, password and steam_guard parameters when using "login" method'
+                'You have to pass username, password and steam_guard parameters when using "login" method',
             )
 
         if invalid_client_credentials_is_present:
@@ -116,15 +126,31 @@ class SteamClient:
             self._session,
         ).login()
         self.was_login_executed = True
+        self._access_token = self._set_access_token()
+
+    def _set_access_token(self) -> str:
+        steam_login_secure_cookies = [
+            cookie
+            for cookie in self._session.cookies
+            if cookie.name == "steamLoginSecure"
+        ]
+        cookie_value = steam_login_secure_cookies[0].value
+        decoded_cookie_value = urlparse.unquote(cookie_value)
+        access_token_parts = decoded_cookie_value.split("||")
+        if len(access_token_parts) < 2:
+            print(decoded_cookie_value)
+            raise ValueError("Access token not found in steamLoginSecure cookie")
+        access_token = access_token_parts[1]
+        return access_token
 
     @login_required
     def logout(self) -> None:
-        url = f"{SteamURL.STORE_URL}/login/logout/"
+        url = f"{SteamUrl.COMMUNITY_URL}/login/logout/"
         data = {"sessionid": self._get_session_id()}
         self._session.post(url, data=data)
 
         if self.is_session_alive():
-            raise Exception("Logout unsuccessful")
+            raise SteampieException("Logout unsuccessful")
 
         self.was_login_executed = False
 
@@ -138,7 +164,7 @@ class SteamClient:
     @login_required
     def is_session_alive(self) -> bool:
         steam_login = self.username
-        main_page_response = self._session.get(SteamURL.COMMUNITY_URL)
+        main_page_response = self._session.get(SteamUrl.COMMUNITY_URL)
         return steam_login.lower() in main_page_response.text.lower()
 
     def api_call(
@@ -147,9 +173,9 @@ class SteamClient:
         interface: str,
         api_method: str,
         version: str,
-        params: dict = None,
+        params: dict | None = None,
     ) -> requests.Response:
-        url = "/".join((SteamURL.API_URL, interface, api_method, version))
+        url = f"{SteamUrl.API_URL}/{interface}/{api_method}/{version}"
         response = (
             self._session.get(url, params=params)
             if method == "GET"
@@ -181,15 +207,7 @@ class SteamClient:
         merge: bool = True,
         count: int = 5000,
     ) -> dict:
-        url = "/".join(
-            (
-                SteamURL.COMMUNITY_URL,
-                "inventory",
-                partner_steam_id,
-                game.app_id,
-                game.context_id,
-            )
-        )
+        url = f"{SteamUrl.COMMUNITY_URL}/inventory/{partner_steam_id}/{game.app_id}/{game.context_id}"
         params = {"l": "english", "count": count}
 
         full_response = self._session.get(url, params=params)
@@ -207,7 +225,9 @@ class SteamClient:
         )
 
     def _get_session_id(self) -> str:
-        return self._session.cookies.get_dict("steamcommunity.com")["sessionid"]
+        return self._session.cookies.get_dict(
+            domain="steamcommunity.com", path="/"
+        ).get("sessionid")
 
     def get_trade_offers_summary(self) -> dict:
         params = {"key": self._api_key}
@@ -215,25 +235,50 @@ class SteamClient:
             "GET", "IEconService", "GetTradeOffersSummary", "v1", params
         ).json()
 
-    def get_trade_offers(self, merge: bool = True) -> dict:
+    def get_trade_offers(
+        self,
+        merge: bool = True,
+        get_sent_offers: bool = True,
+        get_received_offers: bool = True,
+        use_webtoken: bool = False,
+        max_retry: int = 5,
+    ) -> dict:
         params = {
-            "key": self._api_key,
-            "get_sent_offers": 1,
-            "get_received_offers": 1,
+            "key" if not use_webtoken else "access_token": self._api_key
+            if not use_webtoken
+            else self._access_token,
+            "get_sent_offers": int(get_sent_offers),
+            "get_received_offers": int(get_received_offers),
             "get_descriptions": 1,
             "language": "english",
             "active_only": 1,
             "historical_only": 0,
             "time_historical_cutoff": "",
         }
-        response = self.api_call(
-            "GET", "IEconService", "GetTradeOffers", "v1", params
-        ).json()
-        response = self._filter_non_active_offers(response)
 
-        return (
-            merge_items_with_descriptions_from_offers(response) if merge else response
-        )
+        response = self._try_to_get_trade_offers(params, max_retry)
+        if response is None:
+            raise ApiException("Cannot get proper json from get_trade_offers method")
+        response_with_active_offers = self._filter_non_active_offers(response)
+        if merge:
+            return merge_items_with_descriptions_from_offers(
+                response_with_active_offers
+            )
+        else:
+            return response_with_active_offers
+
+    def _try_to_get_trade_offers(self, params: dict, max_retry: int) -> dict | None:
+        response = None
+        for _ in range(max_retry):
+            try:
+                response = self.api_call(
+                    "GET", "IEconService", "GetTradeOffers", "v1", params
+                ).json()
+                break
+            except json.decoder.JSONDecodeError:
+                time.sleep(2)
+                continue
+        return response
 
     @staticmethod
     def _filter_non_active_offers(offers_response):
@@ -244,23 +289,26 @@ class SteamClient:
             filter(
                 lambda offer: offer["trade_offer_state"] == TradeOfferState.Active,
                 offers_received,
-            )
+            ),
         )
         offers_response["response"]["trade_offers_sent"] = list(
             filter(
                 lambda offer: offer["trade_offer_state"] == TradeOfferState.Active,
                 offers_sent,
-            )
+            ),
         )
 
         return offers_response
 
-    def get_trade_offer(self, trade_offer_id: str, merge: bool = True) -> dict:
-        params = {
-            "key": self._api_key,
-            "tradeofferid": trade_offer_id,
-            "language": "english",
-        }
+    def get_trade_offer(
+        self, trade_offer_id: str, merge: bool = True, use_webtoken: bool = False
+    ) -> dict:
+        params = {"tradeofferid": trade_offer_id, "language": "english"}
+        if use_webtoken:
+            params["access_token"] = self._access_token
+        else:
+            params["key"] = self._api_key
+
         response = self.api_call(
             "GET", "IEconService", "GetTradeOffer", "v1", params
         ).json()
@@ -297,24 +345,22 @@ class SteamClient:
             "include_failed": include_failed,
             "include_total": include_total,
         }
-        response = self.api_call(
+        return self.api_call(
             "GET", "IEconService", "GetTradeHistory", "v1", params
         ).json()
-        return response
 
     @login_required
     def get_trade_receipt(self, trade_id: str):
         html = self._session.get(
             f"https://steamcommunity.com/trade/{trade_id}/receipt"
         ).content.decode()
-        items = [
+        return [
             json.loads(item) for item in texts_between(html, "oItem = ", ";\r\n\toItem")
         ]
-        return items
 
     @login_required
     def accept_trade_offer(self, trade_offer_id: str) -> dict:
-        trade = self.get_trade_offer(trade_offer_id)
+        trade = self.get_trade_offer(trade_offer_id, use_webtoken=True)
         trade_offer_state = TradeOfferState(
             trade["response"]["offer"]["trade_offer_state"]
         )
@@ -324,8 +370,8 @@ class SteamClient:
             )
 
         partner = self._fetch_trade_partner_id(trade_offer_id)
-        session_id = self._session.cookies.get_dict("steamcommunity.com")["sessionid"]
-        accept_url = f"{SteamURL.COMMUNITY_URL}/tradeoffer/{trade_offer_id}/accept"
+        session_id = self._get_session_id()
+        accept_url = f"{SteamUrl.COMMUNITY_URL}/tradeoffer/{trade_offer_id}/accept"
         params = {
             "sessionid": session_id,
             "tradeofferid": trade_offer_id,
@@ -367,17 +413,15 @@ class SteamClient:
 
     def decline_trade_offer(self, trade_offer_id: str) -> dict:
         url = f"https://steamcommunity.com/tradeoffer/{trade_offer_id}/decline"
-        response = self._session.post(
+        return self._session.post(
             url, data={"sessionid": self._get_session_id()}
         ).json()
-        return response
 
     def cancel_trade_offer(self, trade_offer_id: str) -> dict:
         url = f"https://steamcommunity.com/tradeoffer/{trade_offer_id}/cancel"
-        response = self._session.post(
+        return self._session.post(
             url, data={"sessionid": self._get_session_id()}
         ).json()
-        return response
 
     @login_required
     def make_offer(
@@ -389,7 +433,7 @@ class SteamClient:
     ) -> dict:
         offer = self._create_offer_dict(items_from_me, items_from_them)
         session_id = self._get_session_id()
-        url = f"{SteamURL.COMMUNITY_URL}/tradeoffer/new/send"
+        url = f"{SteamUrl.COMMUNITY_URL}/tradeoffer/new/send"
         server_id = 1
         params = {
             "sessionid": session_id,
@@ -402,8 +446,8 @@ class SteamClient:
         }
         partner_account_id = steam_id_to_account_id(partner_steam_id)
         headers = {
-            "Referer": f"{SteamURL.COMMUNITY_URL}/tradeoffer/new/?partner={partner_account_id}",
-            "Origin": SteamURL.COMMUNITY_URL,
+            "Referer": f"{SteamUrl.COMMUNITY_URL}/tradeoffer/new/?partner={partner_account_id}",
+            "Origin": SteamUrl.COMMUNITY_URL,
         }
 
         response = self._session.post(url, data=params, headers=headers).json()
@@ -452,8 +496,8 @@ class SteamClient:
     @login_required
     def get_escrow_duration(self, trade_offer_url: str) -> int:
         headers = {
-            "Referer": f"{SteamURL.COMMUNITY_URL}{urlparse.urlparse(trade_offer_url).path}",
-            "Origin": SteamURL.COMMUNITY_URL,
+            "Referer": f"{SteamUrl.COMMUNITY_URL}{urlparse.urlparse(trade_offer_url).path}",
+            "Origin": SteamUrl.COMMUNITY_URL,
         }
         response = self._session.get(trade_offer_url, headers=headers).text
 
@@ -472,6 +516,7 @@ class SteamClient:
         trade_offer_url: str,
         message: str = "",
         case_sensitive: bool = True,
+        confirm_trade: bool = True,
     ) -> dict:
         token = get_key_value_from_url(trade_offer_url, "token", case_sensitive)
         partner_account_id = get_key_value_from_url(
@@ -480,7 +525,7 @@ class SteamClient:
         partner_steam_id = account_id_to_steam_id(partner_account_id)
         offer = self._create_offer_dict(items_from_me, items_from_them)
         session_id = self._get_session_id()
-        url = f"{SteamURL.COMMUNITY_URL}/tradeoffer/new/send"
+        url = f"{SteamUrl.COMMUNITY_URL}/tradeoffer/new/send"
         server_id = 1
         trade_offer_create_params = {"trade_offer_access_token": token}
         params = {
@@ -494,16 +539,53 @@ class SteamClient:
         }
 
         headers = {
-            "Referer": f"{SteamURL.COMMUNITY_URL}{urlparse.urlparse(trade_offer_url).path}",
-            "Origin": SteamURL.COMMUNITY_URL,
+            "Referer": f"{SteamUrl.COMMUNITY_URL}{urlparse.urlparse(trade_offer_url).path}",
+            "Origin": SteamUrl.COMMUNITY_URL,
         }
 
         response = self._session.post(url, data=params, headers=headers).json()
-        if response.get("needs_mobile_confirmation"):
+        if confirm_trade and response.get("needs_mobile_confirmation"):
             response.update(self._confirm_transaction(response["tradeofferid"]))
 
         return response
 
+    def _friend_ajax_request(self, method: str, steam_id: str, accept: int = 0) -> dict:
+        assert method.lower() in ["add", "remove"]
+
+        headers = {"Content-Type": "application/x-www-form-urlencoded; charset=UTF-8"}
+        url = f"{SteamUrl.COMMUNITY_URL}/actions/AddFriendAjax"
+        data = {
+            "sessionID": self._get_session_id(),
+            "steamid": steam_id,
+            "accept_invite": accept,
+        }
+
+        if method == "remove":
+            url = f"{SteamUrl.COMMUNITY_URL}/actions/RemoveFriendAjax"
+            del data["accept_invite"]
+
+        response = self._session.post(url, data=data, headers=headers)
+
+        if response.status_code != 200:
+            raise ApiException(
+                f"Request failed with status code {response.status_code}"
+            )
+
+        # returns True or json object if request was succes, otherwise False
+        return response.json()
+
+    @login_required
+    def remove_friend(self, steam_id: str) -> dict:
+        return self._friend_ajax_request("remove", steam_id)
+
+    @login_required
+    def add_friend(self, steam_id: str) -> dict:
+        return self._friend_ajax_request("add", steam_id)
+
+    @login_required
+    def accept_friend(self, steam_id: str) -> dict:
+        return self._friend_ajax_request("add", steam_id, accept=1)
+
     @staticmethod
     def _get_trade_offer_url(trade_offer_id: str) -> str:
-        return f"{SteamURL.COMMUNITY_URL}/tradeoffer/{trade_offer_id}"
+        return f"{SteamUrl.COMMUNITY_URL}/tradeoffer/{trade_offer_id}"
