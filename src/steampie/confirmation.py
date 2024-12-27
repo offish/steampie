@@ -41,12 +41,6 @@ class ConfirmationExecutor:
 
         return self._send_confirmation(confirmation)
 
-    def confirm_sell_listing(self, asset_id: str) -> dict:
-        confirmations = self._get_confirmations()
-        confirmation = self._select_sell_listing_confirmation(confirmations, asset_id)
-
-        return self._send_confirmation(confirmation)
-
     def _send_confirmation(self, confirmation: Confirmation) -> dict:
         tag = Tag.ALLOW
         params = self._create_confirmation_params(tag.value)
@@ -127,30 +121,6 @@ class ConfirmationExecutor:
                 return confirmation
 
         raise ConfirmationExpected
-
-    def _select_sell_listing_confirmation(
-        self, confirmations: list[Confirmation], asset_id: str
-    ) -> Confirmation:
-        for confirmation in confirmations:
-            confirmation_details_page = self._fetch_confirmation_details_page(
-                confirmation
-            )
-            confirmation_id = self._get_confirmation_sell_listing_id(
-                confirmation_details_page
-            )
-            if confirmation_id == asset_id:
-                return confirmation
-
-        raise ConfirmationExpected
-
-    @staticmethod
-    def _get_confirmation_sell_listing_id(confirmation_details_page: str) -> str:
-        soup = BeautifulSoup(confirmation_details_page, "html.parser")
-        scr_raw = soup.select("script")[2].string.strip()
-        scr_raw = scr_raw[scr_raw.index("'confiteminfo', ") + 16 :]
-        scr_raw = scr_raw[: scr_raw.index(", UserYou")].replace("\n", "")
-
-        return json.loads(scr_raw)["id"]
 
     @staticmethod
     def _get_confirmation_trade_offer_id(confirmation_details_page: str) -> str:

@@ -22,9 +22,6 @@ def get_credentials() -> dict:
     with open("./credentials.json", "r") as f:
         steam_credentials = json.load(f)
 
-    with open("./76561198253325712.maFile", "r") as f:
-        steam_credentials["steam_guard_file"] = f.read()
-
     return steam_credentials
 
 
@@ -33,13 +30,24 @@ def credentials() -> dict:
     return get_credentials()
 
 
+@pytest.fixture
+def steam_guard_file() -> dict:
+    steam_guard_credentials = {}
+
+    with open("./76561198253325712.maFile", "r") as f:
+        steam_guard_credentials = json.load(f)
+
+    steam_credentials = get_credentials()
+
+    steam_guard_credentials["password"] = steam_credentials["password"]
+    steam_guard_credentials["api_key"] = steam_credentials["api_key"]
+
+    return steam_guard_credentials
+
+
 steam_credentials = get_credentials()
-steam_client = SteamClient(steam_credentials["api_key"])
-steam_client.login(
-    steam_credentials["username"],
-    steam_credentials["password"],
-    steam_credentials["steam_guard_file"],
-)
+steam_client = SteamClient(**steam_credentials)
+steam_client.login()
 
 
 @pytest.fixture

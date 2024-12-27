@@ -11,11 +11,11 @@ def load_steam_guard(steam_guard: str) -> dict[str, str]:
     """Load Steam Guard credentials from json (file or string).
 
     Arguments:
-        steam_guard (str): If this string is a path to a file, then its contents will be parsed as a json data.
+        steam_guard: If this string is a path to a file, then its contents will be parsed as a json data.
             Otherwise, the string will be parsed as a json data.
 
     Returns:
-        Dict[str, str]: Parsed json data as a dictionary of strings (both key and value).
+        Parsed json data as a dictionary of strings (both key and value).
 
     """
     if Path(steam_guard).is_file():
@@ -28,12 +28,13 @@ def load_steam_guard(steam_guard: str) -> dict[str, str]:
 def generate_one_time_code(shared_secret: str, timestamp: int | None = None) -> str:
     if timestamp is None:
         timestamp = int(time())
-    time_buffer = struct.pack(">Q", timestamp // 30)  # pack as Big endian, uint64
+
+    # pack as Big endian, uint64
+    time_buffer = struct.pack(">Q", timestamp // 30)
     time_hmac = hmac.new(b64decode(shared_secret), time_buffer, digestmod=sha1).digest()
     begin = ord(time_hmac[19:20]) & 0xF
-    full_code = (
-        struct.unpack(">I", time_hmac[begin : begin + 4])[0] & 0x7FFFFFFF
-    )  # unpack as Big endian uint32
+    # unpack as Big endian uint32
+    full_code = struct.unpack(">I", time_hmac[begin : begin + 4])[0] & 0x7FFFFFFF
     chars = "23456789BCDFGHJKMNPQRTVWXY"
     code = ""
 

@@ -1,6 +1,5 @@
 import struct
 from copy import copy
-from pathlib import Path
 from urllib.parse import parse_qs, urlparse
 
 import requests
@@ -21,7 +20,6 @@ __all__ = [
     "merge_items",
     "get_description_key",
     "get_key_value_from_url",
-    "load_credentials",
     "ping_proxy",
     "create_cookie",
 ]
@@ -92,16 +90,20 @@ def merge_items_with_descriptions_from_offers(offers_response: dict) -> dict:
         get_description_key(offer): offer
         for offer in offers_response["response"].get("descriptions", [])
     }
+
     received_offers = offers_response["response"].get("trade_offers_received", [])
     sent_offers = offers_response["response"].get("trade_offers_sent", [])
+
     offers_response["response"]["trade_offers_received"] = [
         merge_items_with_descriptions_from_offer(offer, descriptions)
         for offer in received_offers
     ]
+
     offers_response["response"]["trade_offers_sent"] = [
         merge_items_with_descriptions_from_offer(offer, descriptions)
         for offer in sent_offers
     ]
+
     return offers_response
 
 
@@ -110,8 +112,10 @@ def merge_items_with_descriptions_from_offer(offer: dict, descriptions: dict) ->
     merged_items_to_receive = merge_items(
         offer.get("items_to_receive", []), descriptions
     )
+
     offer["items_to_give"] = merged_items_to_give
     offer["items_to_receive"] = merged_items_to_receive
+
     return offer
 
 
@@ -141,14 +145,6 @@ def get_key_value_from_url(url: str, key: str, case_sensitive: bool = True) -> s
         if case_sensitive
         else CaseInsensitiveDict(parse_qs(params))[key][0]
     )
-
-
-def load_credentials():
-    dirname = Path(__file__).resolve().parent
-    with Path(f"{dirname}/../secrets/credentials.pwd").open(encoding="utf-8") as f:
-        return [
-            Credentials(line.split()[0], line.split()[1], line.split()[2]) for line in f
-        ]
 
 
 def ping_proxy(proxies: dict) -> bool:

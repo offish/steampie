@@ -40,20 +40,26 @@ class LoginExecutor:
             "Referer": f"{SteamUrl.COMMUNITY_URL}/",
             "Origin": SteamUrl.COMMUNITY_URL,
         }
+
         if method.upper() == "GET":
             return self.session.get(url, params=params, headers=headers)
+
         if method.upper() == "POST":
             return self.session.post(url, data=params, headers=headers)
+
         raise ValueError("Method must be either GET or POST")
 
     def login(self) -> Session:
         login_response = self._send_login_request()
+
         if not login_response.json()["response"]:
             raise ApiException(
                 "No response received from Steam API. Please try again later."
             )
+
         self._check_for_captcha(login_response)
         self._update_steam_guard(login_response)
+
         finalized_response = self._finalize_login()
         self._perform_redirects(finalized_response.json())
         self.set_sessionid_cookies()
@@ -80,13 +86,15 @@ class LoginExecutor:
         store_domain = SteamUrl.STORE_URL[8:]
         community_cookie_dic = self.session.cookies.get_dict(domain=community_domain)
         store_cookie_dic = self.session.cookies.get_dict(domain=store_domain)
-        for name in (
+
+        for name in [
             "steamLoginSecure",
             "sessionid",
             "steamRefresh_steam",
             "steamCountry",
-        ):
+        ]:
             cookie = self.session.cookies.get_dict()[name]
+
             if name == "steamLoginSecure":
                 store_cookie = create_cookie(name, store_cookie_dic[name], store_domain)
             else:
@@ -114,6 +122,7 @@ class LoginExecutor:
 
         if response.status_code == HTTPStatus.OK and "response" in response.json():
             key_data = response.json()["response"]
+
             # Steam may return an empty 'response' value even if the status is 200
             if (
                 "publickey_mod" in key_data
@@ -128,6 +137,7 @@ class LoginExecutor:
                 }
 
         maximal_number_of_repetitions = 5
+
         if current_number_of_repetitions < maximal_number_of_repetitions:
             return self._fetch_rsa_params(current_number_of_repetitions + 1)
 
@@ -157,6 +167,7 @@ class LoginExecutor:
         if login_response.json()["requires_twofactor"]:
             self.one_time_code = generate_one_time_code(self.shared_secret)
             return self._send_login_request()
+
         return login_response
 
     @staticmethod
@@ -221,6 +232,7 @@ class LoginExecutor:
             "sessionid": sessionid,
             "redir": redir,
         }
+
         return self.session.post(
             SteamUrl.LOGIN_URL + "/jwt/finalizelogin", data=finalized_data
         )
