@@ -67,8 +67,25 @@ def test_get_trade_offers(client: SteamClient) -> None:
 #     assert response_dict["response"] == {}
 
 
-def test_make_offer(client: SteamClient) -> None:
-    partner_steam_id = "76561198449257208"
+def test_make_offer_url(
+    client: SteamClient, partner_steam_id: str, partner_trade_url: str
+) -> None:
+    game = GameOptions.TF2
+    my_items = client.get_my_inventory(GameOptions.TF2)
+    partner_items = client.get_partner_inventory(partner_steam_id, game)
+    my_first_item = next(iter(my_items.values()))
+    partner_first_item = next(iter(partner_items.values()))
+    my_asset = Asset(my_first_item["id"], game)
+    partner_asset = Asset(partner_first_item["id"], game)
+    response = client.make_offer_with_url(
+        [my_asset], [partner_asset], partner_trade_url, "test offer"
+    )
+
+    assert response is not None
+    assert "tradeofferid" in response
+
+
+def test_make_offer(client: SteamClient, partner_steam_id: str) -> None:
     game = GameOptions.TF2
     my_items = client.get_my_inventory(GameOptions.TF2)
     partner_items = client.get_partner_inventory(partner_steam_id, game)
@@ -84,40 +101,9 @@ def test_make_offer(client: SteamClient) -> None:
     assert "tradeofferid" in response
 
 
-# def test_make_offer_url() -> None:
-#     partner_account_id = "488991480"
-#     partner_token = "7vqRtBpC"
-#     sample_trade_url = f"https://steamcommunity.com/tradeoffer/new/?partner={partner_account_id}&token={partner_token}"
-#     client = SteamClient(self.credentials.api_key)
-#     client.login(
-#         self.credentials.login, self.credentials.password, self.steam_guard_file
-#     )
-#     client._session.request("HEAD", "http://steamcommunity.com")
-#     partner_steam_id = account_id_to_steam_id(partner_account_id)
-#     game = GameOptions.CS
-#     my_items = client.get_my_inventory(game, merge=False)["rgInventory"]
-#     partner_items = client.get_partner_inventory(partner_steam_id, game, merge=False)[
-#         "rgInventory"
-#     ]
-#     my_first_item = next(iter(my_items.values()))
-#     partner_first_item = next(iter(partner_items.values()))
-#     my_asset = Asset(my_first_item["id"], game)
-#     partner_asset = Asset(partner_first_item["id"], game)
-#     response = client.make_offer_with_url(
-#         [my_asset], [partner_asset], sample_trade_url, "TESTOWA OFERTA"
-#     )
-
-#     assert response is not None
-#     assert "tradeofferid" in response
-
-
-# def test_get_escrow_duration(client:SteamClient) -> None:
-#     # A sample trade URL with escrow time of 15 days cause mobile auth not added
-#     sample_trade_url = (
-#         "https://steamcommunity.com/tradeoffer/new/?partner=314218906&token=sgA4FdNm"
-#     )
-#     response = client.get_escrow_duration(sample_trade_url)
-#     assert response == 15
+def test_get_escrow_duration(client: SteamClient, partner_trade_url: str) -> None:
+    response = client.get_escrow_duration(partner_trade_url)
+    assert response == 0
 
 
 def test_logout(client: SteamClient) -> None:

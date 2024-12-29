@@ -66,7 +66,8 @@ class SteamClient:
         if not isinstance(proxies, dict):
             raise TypeError(
                 "Proxy must be a dict. Example: "
-                r'\{"http": "http://login:password@host:port"\, "https": "http://login:password@host:port"\}',
+                + "{'http': 'http://login:password@host:port', "
+                + "'https': 'http://login:password@host:port'}",
             )
 
         if ping_proxy(proxies):
@@ -140,6 +141,7 @@ class SteamClient:
         return self
 
     def __exit__(self, exc_type, exc_val, exc_tb):
+        del exc_type, exc_val, exc_tb
         self.logout()
 
     @login_required
@@ -157,11 +159,12 @@ class SteamClient:
         params: dict | None = None,
     ) -> requests.Response:
         url = f"{SteamUrl.API_URL}/{interface}/{api_method}/{version}"
-        response = (
-            self._session.get(url, params=params)
-            if method == "GET"
-            else self._session.post(url, data=params)
-        )
+        response = None
+
+        if method == "GET":
+            response = self._session.get(url, params=params)
+        else:
+            response = self._session.post(url, data=params)
 
         if self.is_invalid_api_key(response):
             raise InvalidCredentials("Invalid API key")
@@ -216,16 +219,24 @@ class SteamClient:
             else response_dict
         )
 
-    def _get_session_id(self) -> str:
-        return self._session.cookies.get_dict(
-            domain="steamcommunity.com", path="/"
-        ).get("sessionid")
+    def _get_session_id(self) -> str | None:
+        response = self._session.cookies.get_dict(domain="steamcommunity.com", path="/")
+        return response.get("sessionid")
 
     def get_trade_offers_summary(self) -> dict:
         params = {"key": self._api_key}
-        return self.api_call(
+        response = self.api_call(
             "GET", "IEconService", "GetTradeOffersSummary", "v1", params
-        ).json()
+        )
+        return response.json()
+
+    def _set_token_params(self, params: dict, use_webtoken: bool) -> dict:
+        if use_webtoken:
+            params["access_token"] = self._access_token
+        else:
+            params["key"] = self._api_key
+
+        return params
 
     def get_trade_offers(
         self,
@@ -236,9 +247,6 @@ class SteamClient:
         max_retry: int = 5,
     ) -> dict:
         params = {
-            "key" if not use_webtoken else "access_token": self._api_key
-            if not use_webtoken
-            else self._access_token,
             "get_sent_offers": int(get_sent_offers),
             "get_received_offers": int(get_received_offers),
             "get_descriptions": 1,
@@ -248,19 +256,22 @@ class SteamClient:
             "time_historical_cutoff": "",
         }
 
+        params = self._set_token_params(params, use_webtoken)
         response = self._try_to_get_trade_offers(params, max_retry)
+
         if response is None:
             raise ApiException("Cannot get proper json from get_trade_offers method")
+
         response_with_active_offers = self._filter_non_active_offers(response)
-        if merge:
-            return merge_items_with_descriptions_from_offers(
-                response_with_active_offers
-            )
-        else:
+
+        if not merge:
             return response_with_active_offers
+
+        return merge_items_with_descriptions_from_offers(response_with_active_offers)
 
     def _try_to_get_trade_offers(self, params: dict, max_retry: int) -> dict | None:
         response = None
+
         for _ in range(max_retry):
             try:
                 response = self.api_call(
@@ -269,7 +280,7 @@ class SteamClient:
                 break
             except json.decoder.JSONDecodeError:
                 time.sleep(2)
-                continue
+
         return response
 
     @staticmethod
@@ -296,10 +307,7 @@ class SteamClient:
         self, trade_offer_id: str, merge: bool = True, use_webtoken: bool = False
     ) -> dict:
         params = {"tradeofferid": trade_offer_id, "language": "english"}
-        if use_webtoken:
-            params["access_token"] = self._access_token
-        else:
-            params["key"] = self._api_key
+        params = self._set_token_params(params, use_webtoken)
 
         response = self.api_call(
             "GET", "IEconService", "GetTradeOffer", "v1", params
@@ -337,9 +345,8 @@ class SteamClient:
             "include_failed": include_failed,
             "include_total": include_total,
         }
-        return self.api_call(
-            "GET", "IEconService", "GetTradeHistory", "v1", params
-        ).json()
+        response = self.api_call("GET", "IEconService", "GetTradeHistory", "v1", params)
+        return response.json()
 
     @login_required
     def get_trade_receipt(self, trade_id: str):
@@ -356,6 +363,7 @@ class SteamClient:
         trade_offer_state = TradeOfferState(
             trade["response"]["offer"]["trade_offer_state"]
         )
+
         if trade_offer_state is not TradeOfferState.Active:
             raise ApiException(
                 f"Invalid trade offer state: {trade_offer_state.name} ({trade_offer_state.value})"
@@ -374,6 +382,7 @@ class SteamClient:
         headers = {"Referer": self._get_trade_offer_url(trade_offer_id)}
 
         response = self._session.post(accept_url, data=params, headers=headers).json()
+
         if response.get("needs_mobile_confirmation", False):
             return self._confirm_transaction(trade_offer_id)
 
@@ -405,15 +414,13 @@ class SteamClient:
 
     def decline_trade_offer(self, trade_offer_id: str) -> dict:
         url = f"https://steamcommunity.com/tradeoffer/{trade_offer_id}/decline"
-        return self._session.post(
-            url, data={"sessionid": self._get_session_id()}
-        ).json()
+        response = self._session.post(url, data={"sessionid": self._get_session_id()})
+        return response.json()
 
     def cancel_trade_offer(self, trade_offer_id: str) -> dict:
         url = f"https://steamcommunity.com/tradeoffer/{trade_offer_id}/cancel"
-        return self._session.post(
-            url, data={"sessionid": self._get_session_id()}
-        ).json()
+        response = self._session.post(url, data={"sessionid": self._get_session_id()})
+        return response.json()
 
     @login_required
     def make_offer(
@@ -536,6 +543,7 @@ class SteamClient:
         }
 
         response = self._session.post(url, data=params, headers=headers).json()
+
         if confirm_trade and response.get("needs_mobile_confirmation"):
             response.update(self._confirm_transaction(response["tradeofferid"]))
 
@@ -563,7 +571,6 @@ class SteamClient:
                 f"Request failed with status code {response.status_code}"
             )
 
-        # returns True or json object if request was succes, otherwise False
         return response.json()
 
     @login_required

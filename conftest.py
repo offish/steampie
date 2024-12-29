@@ -6,6 +6,20 @@ import pytest
 from steampie.client import SteamClient
 
 
+def my_steam_id() -> str:
+    return "76561198253325712"
+
+
+@pytest.fixture
+def partner_steam_id() -> str:
+    return "76561198155938401"
+
+
+@pytest.fixture
+def partner_trade_url() -> str:
+    return "https://steamcommunity.com/tradeoffer/new/?partner=195672673&token=k3YfpXNU"
+
+
 @pytest.fixture
 def shared_secret() -> bytes:
     return b64encode(b"1234567890abcdefghij")
@@ -33,8 +47,9 @@ def credentials() -> dict:
 @pytest.fixture
 def steam_guard_file() -> dict:
     steam_guard_credentials = {}
+    steam_id = my_steam_id()
 
-    with open("./76561198253325712.maFile", "r") as f:
+    with open(f"./{steam_id}.maFile", "r") as f:
         steam_guard_credentials = json.load(f)
 
     steam_credentials = get_credentials()

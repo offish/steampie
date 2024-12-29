@@ -24,13 +24,19 @@ pip install steampie
 pip install --upgrade steampie
 ```
 
-## Usage
+## Differences from `steampy`
+<!-- * Added functionality for adding/removing friends -->
+* Removed market functionality due to Steam having strict ToS regarding market automation
+* Uses [ruff](https://github.com/astral-sh/ruff) for formatting and linting
+* Uses [pytest](https://pytest.org/) for unit tests
+
+<!-- ## Usage
 
 
 ## Examples
 
 
-## Developing
+## Developing -->
 
 
 ### Tests
@@ -50,7 +56,7 @@ make html
 ## License
 MIT License
 
-Copyright (c) 2016 [Michał Bukowski](mailto:gigibukson@gmail.com)<br>
+Copyright (c) 2016 [Michał Bukowski](mailto:gigibukson@gmail.com) <br>
 Copyright (c) 2024 offish ([confern](https://steamcommunity.com/id/confern))
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
