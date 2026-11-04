@@ -8,7 +8,7 @@ from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
 from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
 
-from .exceptions import EncryptionError
+from .exceptions import DecryptionError
 from .types import MaFile, MaFileSummary
 from .utils import get_json
 
@@ -87,16 +87,16 @@ def is_mafile_unencrypted(mafile: Path) -> bool:
 
 def get_mafile_decrypted_data(mafile: Path, code: str | None) -> MaFile:
     if not has_manifest_file(mafile):
-        raise EncryptionError("maFile is encrypted and no manifest.json was found!")
+        raise DecryptionError("maFile is encrypted and no manifest.json was found!")
 
     if not code:
-        raise EncryptionError("No code for maFile decryption was given!")
+        raise DecryptionError("No code for maFile decryption was given!")
 
     manifest_file = mafile.parent / "manifest.json"
     encryption_values = get_encryption_values(manifest_file, mafile)
 
     if not encryption_values:
-        raise EncryptionError(f"No encryption values was found for {mafile.name}")
+        raise DecryptionError(f"No encryption values was found for {mafile.name}")
 
     salt = encryption_values["encryption_salt"]
     iv = encryption_values["encryption_iv"]
@@ -105,7 +105,7 @@ def get_mafile_decrypted_data(mafile: Path, code: str | None) -> MaFile:
     decrypted_text = decrypt_data(code, salt, iv, encrypted_data)
 
     if not decrypted_text:
-        raise EncryptionError(f"Error when trying to decrypt maFile using code {code}")
+        raise DecryptionError(f"Error when trying to decrypt maFile using code {code}")
 
     return json.loads(decrypted_text)
 

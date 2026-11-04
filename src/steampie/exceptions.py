@@ -2,5 +2,5 @@ class SteamPieError(Exception):
     pass
 
 
-class EncryptionError(SteamPieError):
+class DecryptionError(SteamPieError):
     pass
