@@ -27,16 +27,17 @@ class Inventory:
                 return provider(api_key)
 
     def fetch(
-        self, steam_id: int | str, app_id: int | str = 440, context_id: int | str = 2
+        self, steam_id: int | str, app_id: int | str = 440, context_id: int | str = 2, cursor: str | None = None
     ) -> InventoryResponse | FailedResponse:
-        url, params = self.provider.get_url_and_params(steam_id, app_id, context_id)
-        headers = self.provider.get_headers()
+
+        url, params = self.provider.get_url_and_params(steam_id, app_id, context_id, cursor)
+        headers = self.provider.get_headers(steam_id)
         response = requests.get(url, params=params, headers=headers)
 
         if response.ok:
             return response.json()
 
-        return {"success": False, "message": response.text}
+        return {"success": 0, "message": response.text}
 
 
 class AsyncInventory(Inventory):
@@ -50,13 +51,14 @@ class AsyncInventory(Inventory):
         self.provider = self._get_provider(provider_name, api_key)
 
     async def fetch(
-        self, steam_id: int | str, app_id: int | str = 440, context_id: int | str = 2
+        self, steam_id: int | str, app_id: int | str = 440, context_id: int | str = 2, cursor: str | None = None
     ) -> InventoryResponse | FailedResponse:
-        url, params = self.provider.get_url_and_params(steam_id, app_id, context_id)
-        headers = self.provider.get_headers()
+
+        url, params = self.provider.get_url_and_params(steam_id, app_id, context_id, cursor)
+        headers = self.provider.get_headers(steam_id)
 
         async with self.session.get(url, params=params, headers=headers) as resp:
-            if not resp.ok:
-                return {"success": False, "message": await resp.text()}
+            if resp.ok:
+                return await resp.json()
 
-            return await resp.json()
+            return {"success": 0, "message": await resp.text()}

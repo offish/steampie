@@ -5,9 +5,9 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "steampie"
 authors = [
-  { name="offish", email="overutilization@gmail.com" },
+    { name="offish", email="overutilization@gmail.com" },
 ]
-description = "steampie is a Python library with utilities and tools for interacting with Steam."
+description = "Utilities and tools for interacting with Steam."
 readme = "README.md"
 requires-python = ">=3.12"
 keywords = ["steam", "steampie", "steampy", "steamio"]
@@ -16,7 +16,11 @@ classifiers = [
     "License :: OSI Approved :: MIT License",
     "Operating System :: OS Independent",
 ]
-dependencies = []
+dependencies = [
+    "requests",
+    "aiohttp",
+    "cryptography",
+]
 dynamic = ["version"]
 
 [project.urls]
@@ -24,3 +28,6 @@ dynamic = ["version"]
 "Bug Tracker" = "https://github.com/offish/steampie/issues"
 
 [tool.setuptools_scm]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"

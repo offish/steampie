@@ -1,4 +1,7 @@
-from src.steampie import Inventory
+import pytest
+from aiohttp import ClientSession
+
+from src.steampie import AsyncInventory, Inventory
 
 
 def test_default_inventory_provider() -> None:
@@ -43,3 +46,22 @@ def test_invalid_express_load_inventory_fetch() -> None:
 
     assert not response["success"]
     assert "invalid_api_key" in response["message"]
+
+
+def test_steam_community_inventory_fetch() -> None:
+    provider = Inventory("steamcommunity")
+    response = provider.fetch("76561198253325712", "440", "2")
+
+    assert response.get("success")
+    assert response.get("assets")
+    assert response.get("descriptions")
+
+
+async def test_async_steam_community_fetch() -> None:
+    session = ClientSession()
+    provider = AsyncInventory(session)
+    response = await provider.fetch("76561198253325712", "440", "2")
+
+    assert response.get("success")
+    assert response.get("assets")
+    assert response.get("descriptions")
