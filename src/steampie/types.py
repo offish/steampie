@@ -69,6 +69,8 @@ class InventoryResponse(TypedDict):
     total_inventory_count: int
     success: bool
     rwgrsn: int
+    more_items: NotRequired[bool | int]
+    last_assetid: NotRequired[str]
 
 
 class MaFileSession(TypedDict):
