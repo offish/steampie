@@ -2,7 +2,7 @@ from typing import NotRequired, TypedDict
 
 
 class FailedResponse(TypedDict):
-    success: bool
+    success: int
     message: str
 
 
@@ -68,7 +68,7 @@ class Item(Asset, Description): ...
 class InventoryResponse(TypedDict):
     assets: list[Asset]
     descriptions: list[Description]
-    more_items: NotRequired[bool | int]
+    more_items: NotRequired[int]
     last_assetid: NotRequired[str]
     total_inventory_count: int
     success: int

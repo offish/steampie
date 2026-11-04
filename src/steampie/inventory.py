@@ -37,7 +37,7 @@ class Inventory:
         if response.ok:
             return response.json()
 
-        return {"success": False, "message": response.text}
+        return {"success": 0, "message": response.text}
 
 
 class AsyncInventory(Inventory):
@@ -58,7 +58,7 @@ class AsyncInventory(Inventory):
         headers = self.provider.get_headers(steam_id)
 
         async with self.session.get(url, params=params, headers=headers) as resp:
-            if not resp.ok:
-                return {"success": False, "message": await resp.text()}
+            if resp.ok:
+                return await resp.json()
 
-            return await resp.json()
+            return {"success": 0, "message": await resp.text()}
