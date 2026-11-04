@@ -6,7 +6,7 @@ import pytest
 from src.steampie import get_mafile_data, is_mafile_unencrypted
 from src.steampie.mafile import has_manifest_file
 
-MOCK_PATH = Path(__file__).parent / "mock"
+MAFILES_PATH = Path(__file__).parent / "maFiles"
 
 HAS_MANIFEST = {
     "76561199023865941.maFile": False,
@@ -71,17 +71,17 @@ MAFILE_DATA = {
 
 @pytest.mark.parametrize("file_name, expected", HAS_MANIFEST.items(), ids=list(HAS_MANIFEST))
 def test_has_manifest_file(file_name: str, expected: bool):
-    assert has_manifest_file(MOCK_PATH / file_name) is expected
+    assert has_manifest_file(MAFILES_PATH / file_name) is expected
 
 
 @pytest.mark.parametrize("file_name, expected", IS_UNENCRYPTED.items(), ids=list(IS_UNENCRYPTED))
 def test_is_mafile_unencrypted(file_name: str, expected: bool):
-    assert is_mafile_unencrypted(MOCK_PATH / file_name) is expected
+    assert is_mafile_unencrypted(MAFILES_PATH / file_name) is expected
 
 
 @pytest.mark.parametrize("file_name, expected", MAFILE_DATA.items(), ids=list(MAFILE_DATA))
 def test_get_mafile_data(file_name: str, expected: Expected):
-    result = get_mafile_data(MOCK_PATH / file_name, expected.passphrase)
+    result = get_mafile_data(MAFILES_PATH / file_name, expected.passphrase)
 
     assert isinstance(result, dict)
     assert result["steam_id"] == expected.steam_id

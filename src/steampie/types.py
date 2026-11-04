@@ -10,6 +10,7 @@ class DescriptionValue(TypedDict):
     name: str
     value: str
     color: NotRequired[str]
+    type: NotRequired[str]
 
 
 class Action(TypedDict):
@@ -35,22 +36,23 @@ class Asset(TypedDict):
 
 
 class Description(TypedDict):
-    appid: str
+    appid: int
     classid: str
     instanceid: str
     currency: int
     background_color: str
     icon_url: str
     icon_url_large: str
-    descriptions: list[DescriptionValue]
+    descriptions: NotRequired[list[DescriptionValue]]
     tradable: int
     actions: list[Action]
+    fraudwarnings: NotRequired[list[str]]
     name: str
     name_color: str
     type: str
     market_name: str
     market_hash_name: str
-    market_actions: list[Action]
+    market_actions: NotRequired[list[Action]]
     commodity: int
     market_tradable_restriction: int
     market_marketable_restriction: int
@@ -66,11 +68,11 @@ class Item(Asset, Description): ...
 class InventoryResponse(TypedDict):
     assets: list[Asset]
     descriptions: list[Description]
-    total_inventory_count: int
-    success: bool
-    rwgrsn: int
     more_items: NotRequired[bool | int]
     last_assetid: NotRequired[str]
+    total_inventory_count: int
+    success: int
+    rwgrsn: int
 
 
 class MaFileSession(TypedDict):

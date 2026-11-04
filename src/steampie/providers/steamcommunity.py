@@ -21,11 +21,7 @@ class SteamCommunity(Provider):
             "Sec-Fetch-Mode": "navigate",
             "Sec-Fetch-Site": "none",
             "Sec-Fetch-User": "?1",
-            "Referer": (
-                f"https://steamcommunity.com/profiles/{steam_id}/inventory"
-                if steam_id is not None
-                else "https://steamcommunity.com/"
-            ),
+            "Referer": f"https://steamcommunity.com/profiles/{steam_id}/inventory",
         }
 
     def get_url_and_params(
@@ -33,6 +29,7 @@ class SteamCommunity(Provider):
     ) -> tuple[str, dict[str, str | int]]:
         url = f"https://steamcommunity.com/inventory/{steam_id}/{app_id}/{context_id}"
         params: dict[str, str | int] = {"l": "english", "count": 2500}
+
         if cursor is not None:
             params["start_assetid"] = cursor
 
