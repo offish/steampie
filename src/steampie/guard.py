@@ -26,11 +26,11 @@ def generate_one_time_code(shared_secret: str, timestamp: float | None = None) -
 
 def generate_confirmation_key(
     identity_secret: str,
-    tag: Literal["accept", "reject"],
+    tag: Literal["list", "accept", "reject"],
     timestamp: float | None = None,
 ) -> str:
-    if identity_secret is None:
-        raise ValueError("identity_secret cannot be None")
+    if not identity_secret:
+        raise ValueError("identity_secret cannot be empty!")
 
     if timestamp is None:
         timestamp = time.time()
