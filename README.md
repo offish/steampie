@@ -2,6 +2,7 @@
 [![License](https://img.shields.io/github/license/offish/steampie.svg)](https://github.com/offish/steampie/blob/master/LICENSE)
 [![Stars](https://img.shields.io/github/stars/offish/steampie.svg)](https://github.com/offish/steampie/stargazers)
 [![Issues](https://img.shields.io/github/issues/offish/steampie.svg)](https://github.com/offish/steampie/issues)
+[![Downloads](https://img.shields.io/pypi/dm/steampie)](https://github.com/offish/steampie)
 [![Size](https://img.shields.io/github/repo-size/offish/steampie.svg)](https://github.com/offish/steampie)
 [![Discord](https://img.shields.io/discord/467040686982692865?color=7289da&label=Discord&logo=discord)](https://discord.gg/t8nHSvA)
 [![Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff)
