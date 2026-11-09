@@ -16,12 +16,11 @@ def get_account_id_from_trade_url(trade_url: str) -> str:
 
 
 def get_steam_id_from_trade_url(trade_url: str) -> str:
-    return account_id_to_steam_id(get_account_id_from_trade_url(trade_url))
+    account_id = get_account_id_from_trade_url(trade_url)
+    return account_id_to_steam_id(account_id)
 
 
 def get_token_from_trade_url(trade_url: str) -> str | None:
-    if not has_token_in_trade_url(trade_url):
-        return None
-
-    token_index = trade_url.index("&token=") + 7
-    return trade_url[token_index:]
+    if has_token_in_trade_url(trade_url):
+        token_index = trade_url.index("&token=") + 7
+        return trade_url[token_index:]

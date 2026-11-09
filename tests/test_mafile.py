@@ -3,8 +3,7 @@ from typing import NamedTuple
 
 import pytest
 
-from src.steampie import get_mafile_data, is_mafile_unencrypted
-from src.steampie.mafile import has_manifest_file
+from src.steampie import DecryptionError, get_mafile_data, has_manifest_file, is_mafile_unencrypted
 
 MAFILES_PATH = Path(__file__).parent / "maFiles"
 
@@ -88,3 +87,10 @@ def test_get_mafile_data(file_name: str, expected: Expected):
     assert result["username"] == expected.username
     assert result["identity_secret"] == expected.identity_secret
     assert result["shared_secret"] == expected.shared_secret
+
+
+def test_wrong_passphrase_decryption():
+    mafile = MAFILES_PATH / "76561199023863151.maFile"
+
+    with pytest.raises(DecryptionError):
+        get_mafile_data(mafile, "1112")

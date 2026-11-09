@@ -1,4 +1,3 @@
-import pytest
 from aiohttp import ClientSession
 
 from src.steampie import AsyncInventory, Inventory
